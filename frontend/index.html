@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ur">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Urdu Story Teller</title>
+<meta name="theme-color" content="#0ea5e9" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</head>
+<body>
+<div class="container">
+<h1>🎙️ اردو اسٹوری ٹیلر</h1>
+
+
+<section class="card">
+<h2>1) عنوان بولیں (اردو)</h2>
+<div class="row">
+<button id="btnRecord">🎤 اسٹارٹ / اسٹاپ</button>
+<select id="lang">
+<option value="ur-PK" selected>Urdu (Pakistan)</option>
+<option value="ur-IN">Urdu (India)</option>
+</select>
+</div>
+<input id="title" placeholder="یہاں پہچانا گیا عنوان نظر آئے گا (آپ ٹائپ بھی کر سکتے ہیں)…" />
+<small id="sttStatus">Status: idle</small>
+</section>
+
+
+<section class="card">
+<h2>2) LLM سیٹنگز (آپ کے لیے فری)</h2>
+<label>Hugging Face API Token (لوکل اسٹوریج میں محفوظ ہوگا)
+<input id="hfToken" placeholder="hf_..." />
+</label>
+<label>Model repo (chat-style)
+<input id="model" value="Qwen/Qwen2.5-1.5B-Instruct" />
+</label>
+<button id="btnSaveCfg">سیو کریں</button>
+<small>Token بنانے کے لیے: huggingface.co → Settings → Access Tokens (Read)</small>
+</section>
+
+
+<section class="card">
+<h2>3) کہانی بنائیں (3–5 منٹ، اردو)</h2>
+<textarea id="story" rows="12" placeholder="یہاں کہانی آئے گی…"></textarea>
+<div class="row">
+<button id="btnGenerate">✨ کہانی تیار کریں</button>
+</div>
+</section>
+
+
+<section class="card">
+<h2>4) آواز کلوننگ (آپ کی اپنی آواز میں اردو وائس اوور)</h2>
+<div class="row">
+<input id="backendUrl" placeholder="Backend URL (مثلاً http://YOUR_EC2_PUBLIC_IP:8000)" />
+<input id="voiceId" placeholder="voiceId (نمونہ اپ لوڈ کے بعد)" />
+</div>
+<div class="row">
+<button id="btnUploadVoice">⬆️ ریفرنس آواز اپ لوڈ کریں (WAV)</button>
+<input type="file" id="voiceFile" accept="audio/wav" />
+</div>
+<div class="row">
+<button id="btnSynthesize">🗣️ اردو وائس اوور بنائیں</button>
+</div>
+<audio id="player" controls></audio>
+</section>
+
+
+<footer>Installable PWA • Best on Chrome • Urdu first ✅</footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
