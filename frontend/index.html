@@ -1,76 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ur">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Urdu Story Teller</title>
-<meta name="theme-color" content="#0ea5e9" />
-<link rel="stylesheet" href="styles.css" />
-<link rel="manifest" href="manifest.webmanifest">
-<script>
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>اردو کہانی سنانے والا</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; direction: rtl; }
+    input, button { padding: 10px; margin: 6px; font-size: 1rem; }
+    #storyText { margin-top: 18px; font-size: 1.15rem; white-space: pre-wrap; }
+    .mic-btn { border: none; background: none; font-size: 2.2rem; cursor: pointer; margin: 10px; }
+    .mic-btn.glow { color: #e11d48; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { text-shadow: 0 0 6px #e11d48; } 50% { text-shadow: 0 0 24px #e11d48; } 100% { text-shadow: 0 0 6px #e11d48; } }
+    .muted { opacity: 0.7; }
+  </style>
 </head>
 <body>
-<div class="container">
-<h1>🎙️ اردو اسٹوری ٹیلر</h1>
+  <h2>اپنی کہانی کا عنوان درج کریں یا بولیں</h2>
 
+  <input type="text" id="title" placeholder="کہانی کا عنوان لکھیں" />
+  <button id="genBtn">کہانی بنائیں</button>
+  <br />
+  <button class="mic-btn" id="micBtn" title="بولیں">🎤</button>
+  <div id="listenHint" class="muted" style="display:none;">🔊 سن رہا ہوں…</div>
 
-<section class="card">
-<h2>1) عنوان بولیں (اردو)</h2>
-<div class="row">
-<button id="btnRecord">🎤 اسٹارٹ / اسٹاپ</button>
-<select id="lang">
-<option value="ur-PK" selected>Urdu (Pakistan)</option>
-<option value="ur-IN">Urdu (India)</option>
-</select>
-</div>
-<input id="title" placeholder="یہاں پہچانا گیا عنوان نظر آئے گا (آپ ٹائپ بھی کر سکتے ہیں)…" />
-<small id="sttStatus">Status: idle</small>
-</section>
+  <h3>📖 کہانی</h3>
+  <div id="storyText"></div>
 
+  <h3>🔊 آڈیو</h3>
+  <audio id="storyAudio" controls></audio>
 
-<section class="card">
-<h2>2) LLM سیٹنگز (آپ کے لیے فری)</h2>
-<label>Hugging Face API Token (لوکل اسٹوریج میں محفوظ ہوگا)
-<input id="hfToken" placeholder="hf_..." />
-</label>
-<label>Model repo (chat-style)
-<input id="model" value="Qwen/Qwen2.5-1.5B-Instruct" />
-</label>
-<button id="btnSaveCfg">سیو کریں</button>
-<small>Token بنانے کے لیے: huggingface.co → Settings → Access Tokens (Read)</small>
-</section>
+  <script>
+    const backendUrl = "http://3.91.184.138:8000";
 
+    const titleEl = document.getElementById("title");
+    const storyEl = document.getElementById("storyText");
+    const audioEl = document.getElementById("storyAudio");
+    const micBtn  = document.getElementById("micBtn");
+    const listenHint = document.getElementById("listenHint");
+    const genBtn  = document.getElementById("genBtn");
 
-<section class="card">
-<h2>3) کہانی بنائیں (3–5 منٹ، اردو)</h2>
-<textarea id="story" rows="12" placeholder="یہاں کہانی آئے گی…"></textarea>
-<div class="row">
-<button id="btnGenerate">✨ کہانی تیار کریں</button>
-</div>
-</section>
+    genBtn.addEventListener("click", generateStory);
+    micBtn.addEventListener("click", startListening);
 
+    async function generateStory() {
+      const title = titleEl.value.trim();
+      if (!title) { alert("براہ کرم عنوان درج کریں۔"); return; }
 
-<section class="card">
-<h2>4) آواز کلوننگ (آپ کی اپنی آواز میں اردو وائس اوور)</h2>
-<div class="row">
-<input id="backendUrl" placeholder="Backend URL (مثلاً http://YOUR_EC2_PUBLIC_IP:8000)" />
-<input id="voiceId" placeholder="voiceId (نمونہ اپ لوڈ کے بعد)" />
-</div>
-<div class="row">
-<button id="btnUploadVoice">⬆️ ریفرنس آواز اپ لوڈ کریں (WAV)</button>
-<input type="file" id="voiceFile" accept="audio/wav" />
-</div>
-<div class="row">
-<button id="btnSynthesize">🗣️ اردو وائس اوور بنائیں</button>
-</div>
-<audio id="player" controls></audio>
-</section>
+      storyEl.textContent = "کہانی بن رہی ہے… براہ کرم انتظار کریں۔";
+      audioEl.removeAttribute("src");
 
+      const formData = new FormData();
+      formData.append("title", title);
 
-<footer>Installable PWA • Best on Chrome • Urdu first ✅</footer>
-</div>
-<script src="app.js"></script>
+      try {
+        const res = await fetch(`${backendUrl}/story`, { method: "POST", body: formData });
+        if (!res.ok) throw new Error("API error " + res.status);
+        const data = await res.json();
+
+        storyEl.textContent = data.text || "(متن دستیاب نہیں)";
+        audioEl.src = `${backendUrl}/audio/${data.audio}`;
+        audioEl.play().catch(()=>{}); // autoplay may be blocked; user can press play
+      } catch (e) {
+        console.error(e);
+        alert("کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔");
+        storyEl.textContent = "";
+      }
+    }
+
+    function startListening() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("آپ کا براؤزر وائس ان پٹ سپورٹ نہیں کرتا۔ براہ کرم Chrome/Edge استعمال کریں۔");
+        return;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.lang = "ur-PK";
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+
+      micBtn.classList.add("glow");
+      listenHint.style.display = "block";
+      rec.start();
+
+      rec.onresult = (e) => {
+        const txt = e.results[0][0].transcript;
+        titleEl.value = txt;
+      };
+      rec.onerror = () => {
+        alert("آواز سننے میں مسئلہ آیا۔ دوبارہ کوشش کریں۔");
+      };
+      rec.onend = () => {
+        micBtn.classList.remove("glow");
+        listenHint.style.display = "none";
+      };
+    }
+  </script>
 </body>
 </html>
